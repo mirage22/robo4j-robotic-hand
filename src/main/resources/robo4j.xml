@@ -1,0 +1,99 @@
+<robo4j>
+    <roboUnit id="handController">
+        <class>com.wengnermiro.robotic.hand.unit.HandController</class>
+        <config name="com.robo4j.root">
+            <value name="absRightJoystickPos" type="int">32767</value>
+            <value name="absLeftJoystickPos" type="int">32767</value>
+            <value name="absPadJoystickPos" type="int">32767</value>
+            <value name="targetPlatformX" type="String">servo1</value>
+            <value name="servoPlatformXStep" type="float">0.01</value>
+            <value name="targetPlatformYX" type="String">servo2</value>
+            <value name="targetPlatformY" type="String">servo3</value>
+            <value name="targetHeadX" type="String">servo6</value>
+            <value name="targetHeadY" type="String">servo5</value>
+            <value name="targetHeadRotation" type="String">servo4</value>
+            <value name="servoRotationStep" type="float">0.1</value>
+            <value name="delay" type="long">200</value>
+        </config>
+    </roboUnit>
+    <!--<roboUnit id="handPlatformY">-->
+        <!--<class>com.wengnermiro.robotic.hand.unit.ServoCollectionController</class>-->
+        <!--<config name="com.robo4j.root">-->
+            <!--<value name="servoPrefix" type="String">servo</value>-->
+            <!--<value name="servoSuffixes" type="String">2,3</value>-->
+        <!--</config>-->
+    <!--</roboUnit>-->
+    <roboUnit id="gamePad">
+        <class>com.robo4j.units.rpi.pad.LF710PadUnit</class>
+        <config name="com.robo4j.root">
+            <value name="input" type="String">/dev/input/js0</value>
+            <value name="target" type="String">handController</value>
+        </config>
+    </roboUnit>
+    <roboUnit id="servo1">
+        <class>com.robo4j.units.rpi.pwm.PCA9685ServoUnit</class>
+        <config name="com.robo4j.root">
+            <value name="bus" type="int">1</value>
+            <!-- 0x40 hex -->
+            <value name="address" type="int">0x40</value>
+            <value name="channel" type="int">1</value>
+            <value name="trim" type="float">0</value>
+            <value name="inverted" type="boolean">false</value>
+        </config>
+    </roboUnit>
+    <roboUnit id="servo2">
+        <class>com.robo4j.units.rpi.pwm.PCA9685ServoUnit</class>
+        <config name="com.robo4j.root">
+            <value name="bus" type="int">1</value>
+            <!-- 0x40 hex -->
+            <value name="address" type="int">0x40</value>
+            <value name="channel" type="int">2</value>
+            <value name="trim" type="float">0</value>
+            <value name="inverted" type="boolean">false</value>
+        </config>
+    </roboUnit>
+    <roboUnit id="servo3">
+        <class>com.robo4j.units.rpi.pwm.PCA9685ServoUnit</class>
+        <config name="com.robo4j.root">
+            <value name="bus" type="int">1</value>
+            <!-- 0x40 hex -->
+            <value name="address" type="int">0x40</value>
+            <value name="channel" type="int">3</value>
+            <value name="trim" type="float">0</value>
+            <value name="inverted" type="boolean">false</value>
+        </config>
+    </roboUnit>
+    <roboUnit id="servo4">
+        <class>com.robo4j.units.rpi.pwm.PCA9685ServoUnit</class>
+        <config name="com.robo4j.root">
+            <value name="bus" type="int">1</value>
+            <!-- 0x40 hex -->
+            <value name="address" type="int">0x40</value>
+            <value name="channel" type="int">4</value>
+            <value name="trim" type="float">0</value>
+            <value name="inverted" type="boolean">false</value>
+        </config>
+    </roboUnit>
+    <roboUnit id="servo5">
+        <class>com.robo4j.units.rpi.pwm.PCA9685ServoUnit</class>
+        <config name="com.robo4j.root">
+            <value name="bus" type="int">1</value>
+            <!-- 0x40 hex -->
+            <value name="address" type="int">0x40</value>
+            <value name="channel" type="int">5</value>
+            <value name="trim" type="float">0</value>
+            <value name="inverted" type="boolean">false</value>
+        </config>
+    </roboUnit>
+    <roboUnit id="servo6">
+        <class>com.robo4j.units.rpi.pwm.PCA9685ServoUnit</class>
+        <config name="com.robo4j.root">
+            <value name="bus" type="int">1</value>
+            <!-- 0x40 hex -->
+            <value name="address" type="int">0x40</value>
+            <value name="channel" type="int">6</value>
+            <value name="trim" type="float">0</value>
+            <value name="inverted" type="boolean">false</value>
+        </config>
+    </roboUnit>
+</robo4j>

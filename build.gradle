@@ -1,0 +1,42 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'maven'
+    id 'eclipse'
+}
+
+group 'com.wengnermiro.robotic.hand'
+version '1.0-SNAPSHOT'
+apply from: 'libraries.gradle'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
+}
+
+dependencies {
+    compile "com.robo4j:robo4j-hw-rpi:${robo4jVersion}"
+    compile "com.robo4j:robo4j-units-rpi:${robo4jVersion}"
+    compile "com.robo4j:robo4j-units-rpi-http:${robo4jVersion}"
+    compile "com.robo4j:robo4j-socket-http:${robo4jVersion}"
+    testCompile "junit:junit:${junitVersion}"
+    testCompile "org.hamcrest:hamcrest-all:${hamcrestAllVersion}@jar"
+}
+
+task fatJar(type: Jar) {
+    manifest {
+        attributes 'Implementation-Title': rootProject.name,
+                'Implementation-Version': version,
+                'Main-Class': 'com.wengnermiro.robotic.hand.RoboticHandMain'
+    }
+    baseName = rootProject.name
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+wrapper {
+    gradleVersion = "${gradleVersion}"
+}
