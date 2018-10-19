@@ -8,6 +8,7 @@
             <value name="targetPlatformX" type="String">servo1</value>
             <value name="servoPlatformXStep" type="float">0.01</value>
             <value name="targetPlatformYX" type="String">servo2</value>
+            <value name="servoPlatformYXStep" type="float">0.05</value>
             <value name="targetPlatformY" type="String">servo3</value>
             <value name="targetHeadX" type="String">servo6</value>
             <value name="targetHeadY" type="String">servo5</value>
@@ -48,7 +49,8 @@
             <!-- 0x40 hex -->
             <value name="address" type="int">0x40</value>
             <value name="channel" type="int">2</value>
-            <value name="trim" type="float">0</value>
+            <value name="trim" type="float">-20</value>
+            <value name="dualRate" type="float">1.6</value>
             <value name="inverted" type="boolean">false</value>
         </config>
     </roboUnit>
@@ -59,7 +61,8 @@
             <!-- 0x40 hex -->
             <value name="address" type="int">0x40</value>
             <value name="channel" type="int">3</value>
-            <value name="trim" type="float">0</value>
+            <value name="trim" type="float">-10</value>
+            <value name="dualRate" type="float">1.5</value>
             <value name="inverted" type="boolean">false</value>
         </config>
     </roboUnit>

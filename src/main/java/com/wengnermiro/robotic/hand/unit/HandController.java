@@ -48,6 +48,7 @@ public class HandController extends RoboUnit<LF710Message> {
     public static final String PROP_SERVO_PLATFORM_X_STEP = "servoPlatformXStep";
     public static final String PROP_TARGET_PLATFORM_Y = "targetPlatformY";
     public static final String PROP_TARGET_PLATFORM_YX = "targetPlatformYX";
+    public static final String PROP_SERVO_PLATFORM_YX_STEP = "servoPlatformYXStep";
     public static final String PROP_TARGET_HEAD_X = "targetHeadX";
     public static final String PROP_TARGET_HEAD_Y = "targetHeadY";
     public static final String PROP_TARGET_HEAD_ROTATION = "targetHeadRotation";
@@ -66,6 +67,7 @@ public class HandController extends RoboUnit<LF710Message> {
     private String targetHeadRotation;
     private Float servoRotationStep;
     private Float servoPlatformXStep;
+    private Float servoPlatformYXStep;
     private float currentHeadRotation = 0;
     private float currentPlatformX = 0;
     private float currentPlatformYX = 0;
@@ -101,6 +103,10 @@ public class HandController extends RoboUnit<LF710Message> {
         }
         targetPlatformYX = configuration.getString(PROP_TARGET_PLATFORM_YX, null);
         if(targetPlatformYX == null){
+            throw ConfigurationException.createMissingConfigNameException(PROP_TARGET_PLATFORM_YX);
+        }
+        servoPlatformYXStep = configuration.getFloat(PROP_SERVO_PLATFORM_YX_STEP, null);
+        if(servoPlatformYXStep == null){
             throw ConfigurationException.createMissingConfigNameException(PROP_TARGET_PLATFORM_YX);
         }
         targetHeadX = configuration.getString(PROP_TARGET_HEAD_X, null);
@@ -171,11 +177,11 @@ public class HandController extends RoboUnit<LF710Message> {
                 // not necessary
                 break;
             case LEFT_X:
-                currentPlatformYX = normValue(currentPlatformYX, message.getAmount(),absLeftJoystickPos, servoRotationStep);
+                currentPlatformYX = normValue(currentPlatformYX, message.getAmount(),absLeftJoystickPos, servoPlatformYXStep);
                 getContext().getReference(targetPlatformYX).sendMessage(currentPlatformYX);
                 break;
             case LEFT_Y:
-                currentPlatformY = normValue(currentPlatformY, message.getAmount(),absLeftJoystickPos, servoRotationStep);
+                currentPlatformY = normValue(currentPlatformY, message.getAmount(),absLeftJoystickPos, servoPlatformYXStep);
                 getContext().getReference(targetPlatformY).sendMessage(currentPlatformY);
                 break;
             case PAD_X:
