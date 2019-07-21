@@ -3,13 +3,31 @@ plugins {
     id 'idea'
     id 'maven'
     id 'eclipse'
+    id 'com.github.johnrengelman.shadow' version '5.1.0' apply false
 }
 
-group 'com.wengnermiro.robotic.hand'
-version '1.0-SNAPSHOT'
-apply from: 'libraries.gradle'
+def configureShadow(Project p) {
+    p.apply plugin: 'com.github.johnrengelman.shadow'
 
-sourceCompatibility = 1.8
+    p.tasks.shadowJar {
+        baseName = p.name
+        classifier = ''
+    }
+
+    p.tasks.jar.finalizedBy p.tasks.shadowJar
+}
+
+apply plugin: 'java-library'
+
+compileJava.options*.compilerArgs = [
+        "-Xlint:unchecked", "-Xlint:rawtypes", "-Xlint:deprecation"
+]
+
+compileTestJava.options*.compilerArgs = [
+        "-Xlint:deprecation", "-Xlint:unchecked", "-Xlint:rawtypes",
+]
+
+sourceCompatibility = "${javaVersion}"
 
 repositories {
     mavenLocal()
@@ -22,21 +40,6 @@ dependencies {
     compile "com.robo4j:robo4j-units-rpi:${robo4jVersion}"
     compile "com.robo4j:robo4j-units-rpi-http:${robo4jVersion}"
     compile "com.robo4j:robo4j-socket-http:${robo4jVersion}"
-    testCompile "junit:junit:${junitVersion}"
-    testCompile "org.hamcrest:hamcrest-all:${hamcrestAllVersion}@jar"
 }
 
-task fatJar(type: Jar) {
-    manifest {
-        attributes 'Implementation-Title': rootProject.name,
-                'Implementation-Version': version,
-                'Main-Class': 'com.wengnermiro.robotic.hand.RoboticHandMain'
-    }
-    baseName = rootProject.name
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
-}
-
-wrapper {
-    gradleVersion = "${gradleVersion}"
-}
+configureShadow(project)

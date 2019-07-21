@@ -21,9 +21,9 @@ package com.wengnermiro.robotic.hand;
  * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
-public class HandException extends RuntimeException {
+public class ArmException extends RuntimeException {
 
-    public HandException(Throwable cause) {
+    public ArmException(Throwable cause) {
         super(cause);
     }
 }

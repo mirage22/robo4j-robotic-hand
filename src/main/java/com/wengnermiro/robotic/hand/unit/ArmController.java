@@ -31,13 +31,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * HandController reacts on event produced by {@link com.robo4j.units.rpi.pad.LF710PadUnit}
+ * ArmController reacts on event produced by {@link com.robo4j.units.rpi.pad.LF710PadUnit}
  *
  * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
 @CriticalSectionTrait
-public class HandController extends RoboUnit<LF710Message> {
+public class ArmController extends RoboUnit<LF710Message> {
 
     private static final int DEFAULT_JOYSTICK_POS = 32767;
     private static final long DEFAULT_DELAY_MILLS = 200;
@@ -52,6 +52,7 @@ public class HandController extends RoboUnit<LF710Message> {
     public static final String PROP_TARGET_HEAD_X = "targetHeadX";
     public static final String PROP_TARGET_HEAD_Y = "targetHeadY";
     public static final String PROP_TARGET_HEAD_ROTATION = "targetHeadRotation";
+    public static final String PROP_TARGET_GRIPPER = "targetGripper";
     public static final String PROP_SERVO_ROTATION_STEP = "servoRotationStep";
     public static final String PROP_DELAY = "delay";
 
@@ -65,10 +66,12 @@ public class HandController extends RoboUnit<LF710Message> {
     private String targetHeadX;
     private String targetHeadY;
     private String targetHeadRotation;
+    private String targetGripper;
     private Float servoRotationStep;
     private Float servoPlatformXStep;
     private Float servoPlatformYXStep;
     private float currentHeadRotation = 0;
+    private float currentGripperRotation = 0;
     private float currentPlatformX = 0;
     private float currentPlatformYX = 0;
     private float currentPlatformY = 0;
@@ -78,7 +81,7 @@ public class HandController extends RoboUnit<LF710Message> {
 
     private volatile AtomicBoolean notActive = new AtomicBoolean(true);
 
-    public HandController(RoboContext context, String id) {
+    public ArmController(RoboContext context, String id) {
         super(LF710Message.class, context, id);
     }
 
@@ -89,56 +92,50 @@ public class HandController extends RoboUnit<LF710Message> {
         absPadJoystickPos = configuration.getInteger(PROP_ABS_PAD_JOYSTICK_POS, DEFAULT_JOYSTICK_POS).shortValue();
 
         targetPlatformX = configuration.getString(PROP_TARGET_PLATFORM_X, null);
-        if(targetPlatformX == null){
-            throw ConfigurationException.createMissingConfigNameException(PROP_TARGET_PLATFORM_X);
-        }
+        validateProperty(targetPlatformX, PROP_TARGET_PLATFORM_X);
+
         servoPlatformXStep = configuration.getFloat(PROP_SERVO_PLATFORM_X_STEP, null);
-        if(servoPlatformXStep == null){
-            throw ConfigurationException.createMissingConfigNameException(PROP_SERVO_PLATFORM_X_STEP);
-        }
+        validateProperty(servoPlatformXStep, PROP_SERVO_PLATFORM_X_STEP);
+
 
         targetPlatformY = configuration.getString(PROP_TARGET_PLATFORM_Y, null);
-        if(targetPlatformY == null){
-            throw ConfigurationException.createMissingConfigNameException(PROP_TARGET_PLATFORM_Y);
-        }
+        validateProperty(targetPlatformY, PROP_TARGET_PLATFORM_Y);
+
         targetPlatformYX = configuration.getString(PROP_TARGET_PLATFORM_YX, null);
-        if(targetPlatformYX == null){
-            throw ConfigurationException.createMissingConfigNameException(PROP_TARGET_PLATFORM_YX);
-        }
+        validateProperty(targetPlatformYX, PROP_TARGET_PLATFORM_YX);
+
         servoPlatformYXStep = configuration.getFloat(PROP_SERVO_PLATFORM_YX_STEP, null);
-        if(servoPlatformYXStep == null){
-            throw ConfigurationException.createMissingConfigNameException(PROP_TARGET_PLATFORM_YX);
-        }
+        validateProperty(servoPlatformYXStep, PROP_SERVO_PLATFORM_YX_STEP);
+
         targetHeadX = configuration.getString(PROP_TARGET_HEAD_X, null);
-        if(targetHeadX == null){
-            throw ConfigurationException.createMissingConfigNameException(PROP_TARGET_HEAD_X);
-        }
+        validateProperty(targetHeadX, PROP_TARGET_HEAD_X);
+
         targetHeadY = configuration.getString(PROP_TARGET_HEAD_Y, null);
-        if(targetHeadY == null){
-            throw ConfigurationException.createMissingConfigNameException(PROP_TARGET_HEAD_Y);
-        }
+        validateProperty(targetHeadY, PROP_TARGET_HEAD_Y);
+
         targetHeadRotation = configuration.getString(PROP_TARGET_HEAD_ROTATION, null);
-        if(targetHeadRotation == null){
-            throw ConfigurationException.createMissingConfigNameException(PROP_TARGET_HEAD_ROTATION);
-        }
+        validateProperty(targetHeadRotation, PROP_TARGET_HEAD_ROTATION);
+
+
         servoRotationStep = configuration.getFloat(PROP_SERVO_ROTATION_STEP, null);
-        if(servoRotationStep == null){
-            throw ConfigurationException.createMissingConfigNameException(PROP_SERVO_ROTATION_STEP);
-        }
+        validateProperty(servoRotationStep, PROP_SERVO_ROTATION_STEP);
+
+        targetGripper = configuration.getString(PROP_TARGET_GRIPPER, null);
+        validateProperty(targetGripper, PROP_TARGET_GRIPPER);
 
         delay = configuration.getLong(PROP_DELAY, DEFAULT_DELAY_MILLS);
     }
 
     @Override
     public void onMessage(LF710Message message) {
-        if(notActive.get()){
+        if (notActive.get()) {
             getContext().getScheduler().schedule(() -> processPadMessage(message), delay, TimeUnit.MILLISECONDS);
         }
 
     }
 
-    private void processPadMessage(LF710Message message){
-        switch (message.getPart()){
+    private void processPadMessage(LF710Message message) {
+        switch (message.getPart()) {
             case BUTTON:
                 processButton(message);
                 break;
@@ -150,7 +147,7 @@ public class HandController extends RoboUnit<LF710Message> {
         }
     }
 
-    private void processButton(LF710Message message){
+    private void processButton(LF710Message message) {
         LF710Button button = (LF710Button) message.getInput();
         switch (button) {
             case FRONT_UP_RIGHT:
@@ -161,14 +158,22 @@ public class HandController extends RoboUnit<LF710Message> {
                 currentHeadRotation = headValue(false, currentHeadRotation, servoRotationStep);
                 getContext().getReference(targetHeadRotation).sendMessage(currentHeadRotation);
                 break;
+            case FRONT_UP_LEFT:
+                currentGripperRotation = headValue(true, currentGripperRotation, servoRotationStep);
+                getContext().getReference(targetGripper).sendMessage(currentGripperRotation);
+                break;
+            case FRONT_DOWN_LEFT:
+                currentGripperRotation = headValue(false, currentGripperRotation, servoRotationStep);
+                getContext().getReference(targetGripper).sendMessage(currentGripperRotation);
+                break;
             default:
                 SimpleLoggingUtil.info(getClass(), String.format("Button not implemented: %s", message));
         }
     }
 
-    private void processJoystick(LF710Message message){
+    private void processJoystick(LF710Message message) {
         LF710JoystickButton joystick = (LF710JoystickButton) message.getInput();
-        switch (joystick){
+        switch (joystick) {
             case RIGHT_X:
                 currentPlatformX = normValue(currentPlatformX, message.getAmount(), absRightJoystickPos, servoPlatformXStep);
                 getContext().getReference(targetPlatformX).sendMessage(currentPlatformX);
@@ -177,19 +182,19 @@ public class HandController extends RoboUnit<LF710Message> {
                 // not necessary
                 break;
             case LEFT_X:
-                currentPlatformYX = normValue(currentPlatformYX, message.getAmount(),absLeftJoystickPos, servoPlatformYXStep);
+                currentPlatformYX = normValue(currentPlatformYX, message.getAmount(), absLeftJoystickPos, servoPlatformYXStep);
                 getContext().getReference(targetPlatformYX).sendMessage(currentPlatformYX);
                 break;
             case LEFT_Y:
-                currentPlatformY = normValue(currentPlatformY, message.getAmount(),absLeftJoystickPos, servoPlatformYXStep);
+                currentPlatformY = normValue(currentPlatformY, message.getAmount(), absLeftJoystickPos, servoPlatformYXStep);
                 getContext().getReference(targetPlatformY).sendMessage(currentPlatformY);
                 break;
             case PAD_X:
-                currentHeadX = normValue(currentHeadX, message.getAmount(),absPadJoystickPos, servoRotationStep);
+                currentHeadX = normValue(currentHeadX, message.getAmount(), absPadJoystickPos, servoRotationStep);
                 getContext().getReference(targetHeadX).sendMessage(currentHeadX);
                 break;
             case PAD_Y:
-                currentHeadY = normValue(currentHeadY, message.getAmount(),absPadJoystickPos, servoRotationStep);
+                currentHeadY = normValue(currentHeadY, message.getAmount(), absPadJoystickPos, servoRotationStep);
                 getContext().getReference(targetHeadY).sendMessage(currentHeadY);
                 break;
             default:
@@ -197,20 +202,26 @@ public class HandController extends RoboUnit<LF710Message> {
         }
     }
 
-    private float normValue(float current, Short value, int absValue, float step){
+    private float normValue(float current, Short value, int absValue, float step) {
 
         float nexValue = current + (Float.valueOf(value) / absValue) * step;
-        if(Math.abs(nexValue) > 1){
+        if (Math.abs(nexValue) > 1) {
             return Math.signum(nexValue);
         }
 
         return nexValue;
     }
 
-    private float headValue(boolean positive, float currentValue, float step){
-        if(Math.abs(currentValue) > 1){
-            return  Math.signum(currentValue);
+    private float headValue(boolean positive, float currentValue, float step) {
+        if (Math.abs(currentValue) > 1) {
+            return Math.signum(currentValue);
         }
         return positive ? currentValue + step : currentValue - step;
+    }
+
+    private void validateProperty(Object property, String name) throws ConfigurationException {
+        if (property == null) {
+            throw ConfigurationException.createMissingConfigNameException(name);
+        }
     }
 }
