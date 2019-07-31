@@ -36,6 +36,7 @@ repositories {
 }
 
 dependencies {
+    compile "com.robo4j:robo4j-core:${robo4jVersion}"
     compile "com.robo4j:robo4j-hw-rpi:${robo4jVersion}"
     compile "com.robo4j:robo4j-units-rpi:${robo4jVersion}"
     compile "com.robo4j:robo4j-units-rpi-http:${robo4jVersion}"

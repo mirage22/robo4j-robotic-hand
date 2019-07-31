@@ -1,9 +1,9 @@
 <robo4j>
     <roboSystem id="roboticHand">
         <config name="com.robo4j.root">
-            <value name="poolSizeScheduler" type="int">8</value>
-            <value name="poolSizeWorker" type="int">8</value>
-            <value name="poolSizeBlocking" type="int">4</value>
+            <value name="poolSizeScheduler" type="int">15</value>
+            <value name="poolSizeWorker" type="int">15</value>
+            <value name="poolSizeBlocking" type="int">15</value>
             <config name="com.robo4j.messageServer">
                 <value name="hostname" type="String">localhost</value>
                 <!-- 0 means an anonymous port will be used for the message server -->

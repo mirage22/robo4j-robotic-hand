@@ -8,14 +8,32 @@
             <value name="targetPlatformX" type="String">servo1</value>
             <value name="servoPlatformXStep" type="float">0.01</value>
             <value name="targetPlatformYX" type="String">servo2</value>
-            <value name="servoPlatformYXStep" type="float">0.05</value>
+            <value name="servoPlatformYXStep" type="float">0.005</value>
             <value name="targetPlatformY" type="String">servo3</value>
             <value name="targetHeadX" type="String">servo6</value>
             <value name="targetHeadY" type="String">servo5</value>
             <value name="targetHeadRotation" type="String">servo4</value>
             <value name="targetGripper" type="String">servo7</value>
             <value name="servoRotationStep" type="float">0.1</value>
-            <value name="delay" type="long">200</value>
+            <value name="servoRotationHeadRightLeftStep" type="float">0.01</value>
+            <value name="targetDisplay" type="String">ledMatrixController</value>
+            <value name="delay" type="long">20</value>
+        </config>
+    </roboUnit>
+    <roboUnit id="ledMatrixController">
+        <class>com.wengnermiro.robotic.hand.unit.LedMatrixController</class>
+        <config name="com.robo4j.root">
+            <value name="target" type="String">ledMatrix</value>
+        </config>
+    </roboUnit>
+
+    <roboUnit id="ledMatrix">
+        <class>com.robo4j.units.rpi.led.Adafruit8x8MatrixUnit</class>
+        <config name="com.robo4j.root">
+            <value name="bus" type="int">1</value>
+            <!-- 0x70 hex -->
+            <value name="address" type="int">0x70</value>
+            <value name="rotation" type="String">DEFAULT_X_Y</value>
         </config>
     </roboUnit>
     <roboUnit id="gamePad">

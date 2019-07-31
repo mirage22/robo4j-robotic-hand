@@ -23,12 +23,31 @@ import com.robo4j.RoboContext;
 import com.robo4j.RoboUnit;
 import com.robo4j.configuration.Configuration;
 import com.robo4j.hw.rpi.pad.LF710Button;
+import com.robo4j.hw.rpi.pad.LF710Input;
 import com.robo4j.hw.rpi.pad.LF710JoystickButton;
 import com.robo4j.hw.rpi.pad.LF710Message;
 import com.robo4j.logging.SimpleLoggingUtil;
+import com.wengnermiro.robotic.hand.listener.ArmGripperHeadServoListenerImpl;
+import com.wengnermiro.robotic.hand.listener.ArmServoListener;
+import com.wengnermiro.robotic.hand.listener.ArmPlatformServoListenerImpl;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+
+import static com.robo4j.hw.rpi.pad.LF710Button.FRONT_DOWN_LEFT;
+import static com.robo4j.hw.rpi.pad.LF710Button.FRONT_DOWN_RIGHT;
+import static com.robo4j.hw.rpi.pad.LF710Button.FRONT_UP_LEFT;
+import static com.robo4j.hw.rpi.pad.LF710Button.FRONT_UP_RIGHT;
+import static com.robo4j.hw.rpi.pad.LF710JoystickButton.LEFT_X;
+import static com.robo4j.hw.rpi.pad.LF710JoystickButton.LEFT_Y;
+import static com.robo4j.hw.rpi.pad.LF710JoystickButton.PAD_X;
+import static com.robo4j.hw.rpi.pad.LF710JoystickButton.PAD_Y;
+import static com.robo4j.hw.rpi.pad.LF710JoystickButton.RIGHT_X;
+import static com.wengnermiro.robotic.hand.unit.UnitsUtil.validateProperty;
 
 /**
  * ArmController reacts on event produced by {@link com.robo4j.units.rpi.pad.LF710PadUnit}
@@ -54,7 +73,21 @@ public class ArmController extends RoboUnit<LF710Message> {
     public static final String PROP_TARGET_HEAD_ROTATION = "targetHeadRotation";
     public static final String PROP_TARGET_GRIPPER = "targetGripper";
     public static final String PROP_SERVO_ROTATION_STEP = "servoRotationStep";
+    public static final String PROP_SERVO_ROTATION_HEAD_LEFT_RIGHT_STEP = "servoRotationHeadRightLeftStep";
     public static final String PROP_DELAY = "delay";
+    public static final String PROP_TARGET_DISPLAY = "targetDisplay";
+    public static final String PAD_INPUT_PRESSED = "pressed";
+    public static final String PAD_INPUT_RELEASED = "released";
+
+    private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1, (r) -> {
+        Thread t = new Thread(r, "ArmController Internal Executor");
+        t.setDaemon(true);
+        return t;
+    });
+
+    private final Map<LF710Input, ArmServoListener> listeners = new ConcurrentHashMap<>();
+    private final AtomicReference<LF710Input> activeKey = new AtomicReference<>();
+    private final Map<String, Float> currentServoValues = new ConcurrentHashMap<>();
 
     private Short absRightJoystickPos;
     private Short absLeftJoystickPos;
@@ -67,19 +100,12 @@ public class ArmController extends RoboUnit<LF710Message> {
     private String targetHeadY;
     private String targetHeadRotation;
     private String targetGripper;
+    private String targetDisplay;
     private Float servoRotationStep;
+    private Float servoRotationHeadRightLeftStep;
     private Float servoPlatformXStep;
     private Float servoPlatformYXStep;
-    private float currentHeadRotation = 0;
-    private float currentGripperRotation = 0;
-    private float currentPlatformX = 0;
-    private float currentPlatformYX = 0;
-    private float currentPlatformY = 0;
-    private float currentHeadX = 0;
-    private float currentHeadY = 0;
     private long delay;
-
-    private volatile AtomicBoolean notActive = new AtomicBoolean(true);
 
     public ArmController(RoboContext context, String id) {
         super(LF710Message.class, context, id);
@@ -91,47 +117,125 @@ public class ArmController extends RoboUnit<LF710Message> {
         absLeftJoystickPos = configuration.getInteger(PROP_ABS_LEFT_JOYSTICK_POS, DEFAULT_JOYSTICK_POS).shortValue();
         absPadJoystickPos = configuration.getInteger(PROP_ABS_PAD_JOYSTICK_POS, DEFAULT_JOYSTICK_POS).shortValue();
 
+        // targetPlatformX
         targetPlatformX = configuration.getString(PROP_TARGET_PLATFORM_X, null);
         validateProperty(targetPlatformX, PROP_TARGET_PLATFORM_X);
+        currentServoValues.put(targetPlatformX, 0F);
+
+        //targetPlatformY
+        targetPlatformY = configuration.getString(PROP_TARGET_PLATFORM_Y, null);
+        validateProperty(targetPlatformY, PROP_TARGET_PLATFORM_Y);
+        currentServoValues.put(targetPlatformY, 0F);
+
+        //targetPlatformYX
+        targetPlatformYX = configuration.getString(PROP_TARGET_PLATFORM_YX, null);
+        validateProperty(targetPlatformYX, PROP_TARGET_PLATFORM_YX);
+        currentServoValues.put(targetPlatformYX, 0F);
+
+        //targetHeadX
+        targetHeadX = configuration.getString(PROP_TARGET_HEAD_X, null);
+        validateProperty(targetHeadX, PROP_TARGET_HEAD_X);
+        currentServoValues.put(targetHeadX, 0F);
+
+        //targetHeadY
+        targetHeadY = configuration.getString(PROP_TARGET_HEAD_Y, null);
+        validateProperty(targetHeadY, PROP_TARGET_HEAD_Y);
+        currentServoValues.put(targetHeadY, 0F);
+
+        //targetHeadRotation
+        targetHeadRotation = configuration.getString(PROP_TARGET_HEAD_ROTATION, null);
+        validateProperty(targetHeadRotation, PROP_TARGET_HEAD_ROTATION);
+        currentServoValues.put(targetHeadRotation, 0F);
+
+        //targetGripper
+        targetGripper = configuration.getString(PROP_TARGET_GRIPPER, null);
+        validateProperty(targetGripper, PROP_TARGET_GRIPPER);
+        currentServoValues.put(targetGripper, 0F);
+
+        targetDisplay = configuration.getString(PROP_TARGET_DISPLAY, null);
+        validateProperty(targetDisplay, PROP_TARGET_DISPLAY);
+
 
         servoPlatformXStep = configuration.getFloat(PROP_SERVO_PLATFORM_X_STEP, null);
         validateProperty(servoPlatformXStep, PROP_SERVO_PLATFORM_X_STEP);
-
-
-        targetPlatformY = configuration.getString(PROP_TARGET_PLATFORM_Y, null);
-        validateProperty(targetPlatformY, PROP_TARGET_PLATFORM_Y);
-
-        targetPlatformYX = configuration.getString(PROP_TARGET_PLATFORM_YX, null);
-        validateProperty(targetPlatformYX, PROP_TARGET_PLATFORM_YX);
-
         servoPlatformYXStep = configuration.getFloat(PROP_SERVO_PLATFORM_YX_STEP, null);
         validateProperty(servoPlatformYXStep, PROP_SERVO_PLATFORM_YX_STEP);
-
-        targetHeadX = configuration.getString(PROP_TARGET_HEAD_X, null);
-        validateProperty(targetHeadX, PROP_TARGET_HEAD_X);
-
-        targetHeadY = configuration.getString(PROP_TARGET_HEAD_Y, null);
-        validateProperty(targetHeadY, PROP_TARGET_HEAD_Y);
-
-        targetHeadRotation = configuration.getString(PROP_TARGET_HEAD_ROTATION, null);
-        validateProperty(targetHeadRotation, PROP_TARGET_HEAD_ROTATION);
-
-
         servoRotationStep = configuration.getFloat(PROP_SERVO_ROTATION_STEP, null);
         validateProperty(servoRotationStep, PROP_SERVO_ROTATION_STEP);
-
-        targetGripper = configuration.getString(PROP_TARGET_GRIPPER, null);
-        validateProperty(targetGripper, PROP_TARGET_GRIPPER);
+        servoRotationHeadRightLeftStep = configuration.getFloat(PROP_SERVO_ROTATION_HEAD_LEFT_RIGHT_STEP, null);
+        validateProperty(servoRotationHeadRightLeftStep, PROP_SERVO_ROTATION_HEAD_LEFT_RIGHT_STEP);
 
         delay = configuration.getLong(PROP_DELAY, DEFAULT_DELAY_MILLS);
     }
 
     @Override
-    public void onMessage(LF710Message message) {
-        if (notActive.get()) {
-            getContext().getScheduler().schedule(() -> processPadMessage(message), delay, TimeUnit.MILLISECONDS);
-        }
+    public void start() {
+        super.start();
 
+        final ArmServoListener listenerPlatformX = createJoystickPadServoListener(targetPlatformX,
+                RIGHT_X, absRightJoystickPos, servoPlatformXStep);
+        listeners.put(listenerPlatformX.getInput(), listenerPlatformX);
+
+        final ArmServoListener listenerPlatformYX = createJoystickPadServoListener(targetPlatformYX,
+                LEFT_X, absLeftJoystickPos, servoPlatformYXStep);
+        listeners.put(listenerPlatformYX.getInput(), listenerPlatformYX);
+
+        final ArmServoListener listenerPlatformY = createJoystickPadServoListener(targetPlatformY,
+                LEFT_Y, absLeftJoystickPos, servoPlatformYXStep);
+        listeners.put(listenerPlatformY.getInput(), listenerPlatformY);
+
+        //targetHeadX
+        final ArmServoListener listenerHeadX = createJoystickPadServoListener(targetHeadX,
+                PAD_X, absPadJoystickPos, servoRotationStep);
+        listeners.put(listenerHeadX.getInput(), listenerHeadX);
+
+        //targetHeadY
+        final ArmServoListener listenerHeadY = createJoystickPadServoListener(targetHeadY,
+                PAD_Y, absPadJoystickPos, servoRotationStep);
+        listeners.put(listenerHeadY.getInput(), listenerHeadY);
+
+        //targetHeadRotation FRONT_UP_RIGHT, FRONT_DOWN_RIGHT
+        final ArmServoListener listenerHeadRotationLeft = createButtonServoListener(targetHeadRotation,
+                FRONT_UP_RIGHT, true, servoRotationHeadRightLeftStep);
+        listeners.put(listenerHeadRotationLeft.getInput(), listenerHeadRotationLeft);
+
+        //targetHeadRotation FRONT_DOWN_RIGHT
+        final ArmServoListener listenerHeadRotationRight = createButtonServoListener(targetHeadRotation,
+                FRONT_DOWN_RIGHT, false, servoRotationHeadRightLeftStep);
+        listeners.put(listenerHeadRotationRight.getInput(), listenerHeadRotationRight);
+
+        //targetGripper FRONT_UP_LEFT
+        final ArmServoListener listenerHeadGripperRotationClose = createButtonServoListener(targetGripper,
+                FRONT_UP_LEFT, true, servoRotationHeadRightLeftStep);
+        listeners.put(listenerHeadGripperRotationClose.getInput(), listenerHeadGripperRotationClose);
+        //targetGripper FRONT_DOWN_LEFT
+        final ArmServoListener listenerHeadGripperRotationOpen = createButtonServoListener(targetGripper,
+                FRONT_DOWN_LEFT, false, servoRotationHeadRightLeftStep);
+        listeners.put(listenerHeadGripperRotationOpen.getInput(), listenerHeadGripperRotationOpen);
+        System.out.println("listeners ADDED");
+
+        executor.scheduleAtFixedRate(() -> {
+            for (ArmServoListener l : listeners.values()) {
+                if (l.isActive()) {
+                    float value = l.process();
+                    currentServoValues.replace(l.getName(), value);
+                }
+            }
+        }, 0, delay, TimeUnit.MILLISECONDS);
+
+    }
+
+    private ArmServoListener createJoystickPadServoListener(String id, LF710Input input, short absPos, float servoStep){
+        return new ArmPlatformServoListenerImpl(id, getContext(),  input, absPos, servoStep);
+    }
+
+    private ArmServoListener createButtonServoListener(String id, LF710Input input, boolean positive, float servoStep){
+        return new ArmGripperHeadServoListenerImpl(id, getContext(), input, positive, servoStep);
+    }
+
+    @Override
+    public void onMessage(LF710Message message) {
+        processPadMessage(message);
     }
 
     private void processPadMessage(LF710Message message) {
@@ -149,22 +253,37 @@ public class ArmController extends RoboUnit<LF710Message> {
 
     private void processButton(LF710Message message) {
         LF710Button button = (LF710Button) message.getInput();
+        System.out.println("processButton:" + message);
+
         switch (button) {
             case FRONT_UP_RIGHT:
-                currentHeadRotation = headValue(true, currentHeadRotation, servoRotationStep);
-                getContext().getReference(targetHeadRotation).sendMessage(currentHeadRotation);
-                break;
             case FRONT_DOWN_RIGHT:
-                currentHeadRotation = headValue(false, currentHeadRotation, servoRotationStep);
-                getContext().getReference(targetHeadRotation).sendMessage(currentHeadRotation);
-                break;
             case FRONT_UP_LEFT:
-                currentGripperRotation = headValue(true, currentGripperRotation, servoRotationStep);
-                getContext().getReference(targetGripper).sendMessage(currentGripperRotation);
-                break;
             case FRONT_DOWN_LEFT:
-                currentGripperRotation = headValue(false, currentGripperRotation, servoRotationStep);
-                getContext().getReference(targetGripper).sendMessage(currentGripperRotation);
+                if(listeners.containsKey(button)){
+                    if (activeKey.get() == null && message.getState().getName().equals(PAD_INPUT_PRESSED)) {
+                        System.out.println("currentHeadRotation PRESSED : " + button);
+                        ArmServoListener listener = listeners.get(button);
+                        listener.setAmount(message.getAmount());
+                        listener.setValue(currentServoValues.get(listener.getName()));
+                        listener.setActive(true);
+                        activeKey.set(listener.getInput());
+                    } else if (activeKey.get() != null && activeKey.get().equals(button) && message.getState().getName().equals(PAD_INPUT_RELEASED)) {
+                        System.out.println("currentHeadRotation RELEASED : " + button);
+                        ArmServoListener listenerPlatformX = listeners.get(button);
+                        listenerPlatformX.setActive(false);
+                        activeKey.set(null);
+                    }
+                }
+                break;
+            case BLUE:
+                getContext().getReference(targetDisplay).sendMessage(LedMatrixMessage.FACE_NEUTRAL);
+                break;
+            case GREEN:
+                getContext().getReference(targetDisplay).sendMessage(LedMatrixMessage.FACE_SMILE);
+                break;
+            case YELLOW:
+                getContext().getReference(targetDisplay).sendMessage(LedMatrixMessage.FACE_SAD);
                 break;
             default:
                 SimpleLoggingUtil.info(getClass(), String.format("Button not implemented: %s", message));
@@ -173,43 +292,18 @@ public class ArmController extends RoboUnit<LF710Message> {
 
     private void processJoystick(LF710Message message) {
         LF710JoystickButton joystick = (LF710JoystickButton) message.getInput();
-        switch (joystick) {
-            case RIGHT_X:
-                currentPlatformX = normValue(currentPlatformX, message.getAmount(), absRightJoystickPos, servoPlatformXStep);
-                getContext().getReference(targetPlatformX).sendMessage(currentPlatformX);
-                break;
-            case RIGHT_Y:
-                // not necessary
-                break;
-            case LEFT_X:
-                currentPlatformYX = normValue(currentPlatformYX, message.getAmount(), absLeftJoystickPos, servoPlatformYXStep);
-                getContext().getReference(targetPlatformYX).sendMessage(currentPlatformYX);
-                break;
-            case LEFT_Y:
-                currentPlatformY = normValue(currentPlatformY, message.getAmount(), absLeftJoystickPos, servoPlatformYXStep);
-                getContext().getReference(targetPlatformY).sendMessage(currentPlatformY);
-                break;
-            case PAD_X:
-                currentHeadX = normValue(currentHeadX, message.getAmount(), absPadJoystickPos, servoRotationStep);
-                getContext().getReference(targetHeadX).sendMessage(currentHeadX);
-                break;
-            case PAD_Y:
-                currentHeadY = normValue(currentHeadY, message.getAmount(), absPadJoystickPos, servoRotationStep);
-                getContext().getReference(targetHeadY).sendMessage(currentHeadY);
-                break;
-            default:
-                SimpleLoggingUtil.error(getClass(), String.format("joystick not available: %s", message));
+        if(listeners.containsKey(joystick)){
+            if (activeKey.get() == null && message.getState().getName().equals(PAD_INPUT_PRESSED)) {
+                ArmServoListener listener = listeners.get(joystick);
+                listener.setAmount(message.getAmount());
+                listener.setActive(true);
+                activeKey.set(listener.getInput());
+            } else if (activeKey.get() != null && activeKey.get().equals(joystick) && message.getState().getName().equals(PAD_INPUT_RELEASED)) {
+                ArmServoListener listenerPlatformX = listeners.get(joystick);
+                listenerPlatformX.setActive(false);
+                activeKey.set(null);
+            }
         }
-    }
-
-    private float normValue(float current, Short value, int absValue, float step) {
-
-        float nexValue = current + (Float.valueOf(value) / absValue) * step;
-        if (Math.abs(nexValue) > 1) {
-            return Math.signum(nexValue);
-        }
-
-        return nexValue;
     }
 
     private float headValue(boolean positive, float currentValue, float step) {
@@ -219,9 +313,4 @@ public class ArmController extends RoboUnit<LF710Message> {
         return positive ? currentValue + step : currentValue - step;
     }
 
-    private void validateProperty(Object property, String name) throws ConfigurationException {
-        if (property == null) {
-            throw ConfigurationException.createMissingConfigNameException(name);
-        }
-    }
 }
