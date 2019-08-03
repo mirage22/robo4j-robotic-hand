@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
-public class ArmGripperHeadServoListenerImpl implements ArmServoListener {
+public class ArmGripperHeadServoListenerImpl implements ArmListener {
 
     private final String name;
     private final RoboContext context;

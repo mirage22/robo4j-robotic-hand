@@ -19,6 +19,7 @@ package com.wengnermiro.robotic.hand.listener;
 
 import com.robo4j.RoboContext;
 import com.robo4j.hw.rpi.pad.LF710Input;
+import com.wengnermiro.robotic.hand.unit.LedMatrixMessage;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -26,26 +27,18 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
-public class ArmPlatformServoListenerImpl implements ArmListener {
+public abstract class AbstractFaceListenerImpl implements ArmListener {
+    final String name;
+    final RoboContext context;
+    final AtomicBoolean active = new AtomicBoolean();
+    final LF710Input input;
+    short amount;
+    float value;
 
-    public static final short MAX_AMOUNT = 32767;
-
-    private final String name;
-    private final RoboContext context;
-    private final AtomicBoolean active = new AtomicBoolean();
-    private final LF710Input input;
-    private float amount;
-    private float value;
-    private short absPos;
-    private float servoStep;
-
-    public ArmPlatformServoListenerImpl(String name, RoboContext context, LF710Input input,
-                                        short absPos, float servoStep) {
+    AbstractFaceListenerImpl(String name, RoboContext context, LF710Input input) {
         this.name = name;
         this.context = context;
         this.input = input;
-        this.absPos = absPos;
-        this.servoStep = servoStep;
     }
 
     @Override
@@ -54,13 +47,13 @@ public class ArmPlatformServoListenerImpl implements ArmListener {
     }
 
     @Override
-    public LF710Input getInput() {
-        return input;
+    public boolean isActive() {
+        return active.get();
     }
 
     @Override
-    public boolean isActive() {
-        return active.get();
+    public LF710Input getInput() {
+        return input;
     }
 
     @Override
@@ -78,21 +71,5 @@ public class ArmPlatformServoListenerImpl implements ArmListener {
         this.value = value;
     }
 
-    @Override
-    public float process() {
-        if (active.get()) {
-            short step = amount > 0 ? MAX_AMOUNT : -MAX_AMOUNT;
-            value = normValue(value, step, absPos, servoStep);
-            context.getReference(name).sendMessage(value);
-        }
-        return value;
-    }
-
-    private float normValue(float current, Short value, int absValue, float step) {
-        float nexValue = current + (Float.valueOf(value) / absValue) * step;
-        if (Math.abs(nexValue) > 1) {
-            return Math.signum(nexValue);
-        }
-        return nexValue;
-    }
+    public abstract float process();
 }

@@ -17,20 +17,24 @@
 
 package com.wengnermiro.robotic.hand.listener;
 
+import com.robo4j.RoboContext;
 import com.robo4j.hw.rpi.pad.LF710Input;
-import com.robo4j.hw.rpi.pad.LF710Message;
+import com.wengnermiro.robotic.hand.unit.LedMatrixMessage;
 
 /**
  * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
-public interface ArmServoListener {
-    short MAX_AMOUNT = 32767;
-    String getName();
-    boolean isActive();
-    LF710Input getInput();
-    void setActive(boolean state);
-    void setAmount(short amount);
-    void setValue(float value);
-    float process();
+public class FaceNeutralListenerImpl extends AbstractFaceListenerImpl{
+    public FaceNeutralListenerImpl(String name, RoboContext context, LF710Input input) {
+        super(name, context, input);
+    }
+
+    @Override
+    public float process() {
+        if(amount == 1){
+            context.getReference(name).sendMessage(LedMatrixMessage.FACE_NEUTRAL);
+        }
+        return amount;
+    }
 }
