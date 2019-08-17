@@ -18,7 +18,6 @@
 package com.wengnermiro.robotic.hand;
 
 /**
- * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
 public class ArmException extends RuntimeException {

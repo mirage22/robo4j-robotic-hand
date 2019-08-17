@@ -15,26 +15,17 @@
  * along with Robo4J. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.wengnermiro.robotic.hand.listener;
+package com.wengnermiro.robotic.hand.codec;
 
-import com.robo4j.RoboContext;
-import com.robo4j.hw.rpi.pad.LF710Input;
-import com.wengnermiro.robotic.hand.unit.LedMatrixMessage;
+import com.robo4j.socket.http.codec.AbstractHttpMessageCodec;
+import com.robo4j.socket.http.units.HttpProducer;
 
 /**
  * @author Miroslav Wengner (@miragemiko)
  */
-public class FaceSadListenerImpl extends AbstractFaceListenerImpl {
-
-    public FaceSadListenerImpl(String name, RoboContext context, LF710Input input) {
-        super(name, context, input);
-    }
-
-    @Override
-    public float process() {
-        if(amount == 1){
-            context.getReference(name).sendMessage(LedMatrixMessage.FACE_SAD);
-        }
-        return amount;
+@HttpProducer
+public class ArmHttpMessageCodec extends AbstractHttpMessageCodec<ArmHttpMessage> {
+    public ArmHttpMessageCodec() {
+        super(ArmHttpMessage.class);
     }
 }

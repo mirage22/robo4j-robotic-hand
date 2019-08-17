@@ -22,12 +22,9 @@ import com.robo4j.CriticalSectionTrait;
 import com.robo4j.RoboContext;
 import com.robo4j.RoboUnit;
 import com.robo4j.configuration.Configuration;
-import com.robo4j.hw.rpi.pad.LF710Button;
 import com.robo4j.hw.rpi.pad.LF710Input;
-import com.robo4j.hw.rpi.pad.LF710JoystickButton;
 import com.robo4j.hw.rpi.pad.LF710Message;
 import com.robo4j.hw.rpi.pad.LF710State;
-import com.robo4j.logging.SimpleLoggingUtil;
 import com.wengnermiro.robotic.hand.listener.ArmGripperHeadServoListenerImpl;
 import com.wengnermiro.robotic.hand.listener.ArmListener;
 import com.wengnermiro.robotic.hand.listener.ArmPlatformServoListenerImpl;
@@ -59,7 +56,6 @@ import static com.wengnermiro.robotic.hand.unit.UnitsUtil.validateProperty;
 /**
  * ArmController reacts on event produced by {@link com.robo4j.units.rpi.pad.LF710PadUnit}
  *
- * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
 @CriticalSectionTrait
@@ -204,13 +200,13 @@ public class ArmController extends RoboUnit<LF710Message> {
         processPadMessage(message);
     }
 
-    private Float initFloatConfiguration(String propertyName, Configuration configuration) throws ConfigurationException{
+    private Float initFloatConfiguration(String propertyName, Configuration configuration) throws ConfigurationException {
         Float property = configuration.getFloat(propertyName, null);
         validateProperty(property, propertyName);
         return property;
     }
 
-    private String initTargetListenerByConfiguration(String propertyTarget, Configuration configuration) throws ConfigurationException{
+    private String initTargetListenerByConfiguration(String propertyTarget, Configuration configuration) throws ConfigurationException {
         String property = configuration.getString(propertyTarget, null);
         validateProperty(property, propertyTarget);
         currentListenersValues.put(property, 0F);
@@ -218,7 +214,7 @@ public class ArmController extends RoboUnit<LF710Message> {
     }
 
     private void processPadMessage(LF710Message message) {
-        if(listeners.containsKey(message.getInput())){
+        if (listeners.containsKey(message.getInput())) {
             final ArmListener listener = listeners.get(message.getInput());
             if (activeKey.get() == null && message.getState().equals(LF710State.PRESSED)) {
                 System.out.println("currentHeadRotation PRESSED : " + message);
@@ -234,23 +230,23 @@ public class ArmController extends RoboUnit<LF710Message> {
         }
     }
 
-    private ArmListener createJoystickPadServoListener(String id, LF710Input input, short absPos, float servoStep){
-        return new ArmPlatformServoListenerImpl(id, getContext(),  input, absPos, servoStep);
+    private ArmListener createJoystickPadServoListener(String id, LF710Input input, short absPos, float servoStep) {
+        return new ArmPlatformServoListenerImpl(id, getContext(), input, absPos, servoStep);
     }
 
-    private ArmListener createButtonServoListener(String id, LF710Input input, boolean positive, float servoStep){
+    private ArmListener createButtonServoListener(String id, LF710Input input, boolean positive, float servoStep) {
         return new ArmGripperHeadServoListenerImpl(id, getContext(), input, positive, servoStep);
     }
 
-    private void addListeners(ArmListener... listeners){
-        if(listeners != null && listeners.length != 0){
-            for(ArmListener l: listeners){
+    private void addListeners(ArmListener... listeners) {
+        if (listeners != null && listeners.length != 0) {
+            for (ArmListener l : listeners) {
                 addListener(l);
             }
         }
     }
 
-    private void addListener(ArmListener listener){
+    private void addListener(ArmListener listener) {
         listeners.put(listener.getInput(), listener);
     }
 

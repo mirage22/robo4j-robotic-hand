@@ -22,7 +22,6 @@ import com.robo4j.ConfigurationException;
 /**
  * UnitsUtil some useful utils
  *
- * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
 final class UnitsUtil {

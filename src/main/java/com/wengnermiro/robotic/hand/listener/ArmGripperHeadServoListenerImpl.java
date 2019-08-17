@@ -23,7 +23,6 @@ import com.robo4j.hw.rpi.pad.LF710Input;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
 public class ArmGripperHeadServoListenerImpl implements ArmListener {

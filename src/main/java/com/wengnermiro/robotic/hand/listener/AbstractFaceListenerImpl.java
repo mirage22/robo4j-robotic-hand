@@ -24,7 +24,6 @@ import com.wengnermiro.robotic.hand.unit.LedMatrixMessage;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
 public abstract class AbstractFaceListenerImpl implements ArmListener {

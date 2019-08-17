@@ -22,7 +22,6 @@ import com.robo4j.hw.rpi.pad.LF710Input;
 import com.wengnermiro.robotic.hand.unit.LedMatrixMessage;
 
 /**
- * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
 public class FaceNeutralListenerImpl extends AbstractFaceListenerImpl{

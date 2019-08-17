@@ -24,7 +24,6 @@ import com.wengnermiro.robotic.hand.unit.LedMatrixMessage;
 /**
  * PadButtonClickListener listens to specified Pad Event
  *
- * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
 public class FaceSmileListenerImpl extends AbstractFaceListenerImpl {

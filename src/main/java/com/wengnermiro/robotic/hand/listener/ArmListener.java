@@ -23,7 +23,6 @@ import com.robo4j.hw.rpi.pad.LF710Message;
 /**
  *
  *
- * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
 public interface ArmListener {

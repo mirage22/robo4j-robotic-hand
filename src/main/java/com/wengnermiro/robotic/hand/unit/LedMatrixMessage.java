@@ -24,7 +24,6 @@ import com.robo4j.hw.rpi.i2c.adafruitoled.PackElement;
  * LedMatrixMessage provides message that can be displayed on
  * Led Matrix
  *
- * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
 public enum LedMatrixMessage {

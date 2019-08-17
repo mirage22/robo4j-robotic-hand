@@ -29,7 +29,6 @@ import java.util.Arrays;
 import static com.wengnermiro.robotic.hand.unit.UnitsUtil.validateProperty;
 
 /**
- * @author Marcus Hirt (@hirt)
  * @author Miroslav Wengner (@miragemiko)
  */
 public class LedMatrixController extends RoboUnit<LedMatrixMessage> {

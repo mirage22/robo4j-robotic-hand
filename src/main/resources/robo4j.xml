@@ -19,6 +19,21 @@
             <value name="delay" type="long">20</value>
         </config>
     </roboUnit>
+    <roboUnit id="httpServer">
+        <class>com.robo4j.socket.http.units.HttpServerUnit</class>
+        <config name="com.robo4j.root">
+            <value name="port" type="int">8055</value>
+            <value name="packages" type="String">com.wengnermiro.robotic.hand.codec</value>
+            <value name="unitPathsConfig" type="String">[{"roboUnit":"armHttpController","method":"GET"},
+                {"roboUnit":"armHttpController","method":"POST"}]</value>
+        </config>
+    </roboUnit>
+    <roboUnit id="armHttpController">
+        <class>com.wengnermiro.robotic.hand.unit.ArmHttpController</class>
+        <config name="com.robo4j.root">
+            <value name="target" type="String">armController</value>
+        </config>
+    </roboUnit>
     <roboUnit id="ledMatrixController">
         <class>com.wengnermiro.robotic.hand.unit.LedMatrixController</class>
         <config name="com.robo4j.root">

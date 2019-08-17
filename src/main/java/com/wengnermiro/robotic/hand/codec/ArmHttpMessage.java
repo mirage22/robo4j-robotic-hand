@@ -15,26 +15,39 @@
  * along with Robo4J. If not, see <http://www.gnu.org/licenses/>.
  */
 
-package com.wengnermiro.robotic.hand.listener;
+package com.wengnermiro.robotic.hand.codec;
 
-import com.robo4j.RoboContext;
-import com.robo4j.hw.rpi.pad.LF710Input;
-import com.wengnermiro.robotic.hand.unit.LedMatrixMessage;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Miroslav Wengner (@miragemiko)
  */
-public class FaceSadListenerImpl extends AbstractFaceListenerImpl {
+public class ArmHttpMessage implements Serializable {
+    private static final long serialVersionUID = 1L;
 
-    public FaceSadListenerImpl(String name, RoboContext context, LF710Input input) {
-        super(name, context, input);
+    private List<ArmHttpCommand> commands = new ArrayList<>();
+
+    public ArmHttpMessage() {
+    }
+
+    public ArmHttpMessage(List<ArmHttpCommand> commands) {
+        this.commands = commands;
+    }
+
+    public List<ArmHttpCommand> getCommands() {
+        return commands;
+    }
+
+    public void setCommands(List<ArmHttpCommand> commands) {
+        this.commands = commands;
     }
 
     @Override
-    public float process() {
-        if(amount == 1){
-            context.getReference(name).sendMessage(LedMatrixMessage.FACE_SAD);
-        }
-        return amount;
+    public String toString() {
+        return "ArmHttpMessage{" +
+                "commands=" + commands +
+                '}';
     }
 }
