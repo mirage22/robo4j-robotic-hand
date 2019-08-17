@@ -79,7 +79,6 @@ public class ArmController extends RoboUnit<LF710Message> {
     public static final String PROP_TARGET_HEAD_Y = "targetHeadY";
     public static final String PROP_TARGET_HEAD_ROTATION = "targetHeadRotation";
     public static final String PROP_TARGET_GRIPPER = "targetGripper";
-    public static final String PROP_SERVO_ROTATION_STEP = "servoRotationStep";
     public static final String PROP_SERVO_ROTATION_HEAD_LEFT_RIGHT_STEP = "servoRotationHeadRightLeftStep";
     public static final String PROP_DELAY = "delay";
     public static final String PROP_TARGET_DISPLAY = "targetDisplay";
@@ -106,7 +105,6 @@ public class ArmController extends RoboUnit<LF710Message> {
     private String targetHeadRotation;
     private String targetGripper;
     private String targetDisplay;
-    private Float servoRotationStep;
     private Float servoRotationHeadRightLeftStep;
     private Float servoPlatformXStep;
     private Float servoPlatformYXStep;
@@ -122,54 +120,18 @@ public class ArmController extends RoboUnit<LF710Message> {
         absLeftJoystickPos = configuration.getInteger(PROP_ABS_LEFT_JOYSTICK_POS, DEFAULT_JOYSTICK_POS).shortValue();
         absPadJoystickPos = configuration.getInteger(PROP_ABS_PAD_JOYSTICK_POS, DEFAULT_JOYSTICK_POS).shortValue();
 
-        // targetPlatformX
-        targetPlatformX = configuration.getString(PROP_TARGET_PLATFORM_X, null);
-        validateProperty(targetPlatformX, PROP_TARGET_PLATFORM_X);
-        currentListenersValues.put(targetPlatformX, 0F);
+        targetPlatformX = initTargetListenerByConfiguration(PROP_TARGET_PLATFORM_X, configuration);
+        targetPlatformY = initTargetListenerByConfiguration(PROP_TARGET_PLATFORM_Y, configuration);
+        targetPlatformYX = initTargetListenerByConfiguration(PROP_TARGET_PLATFORM_YX, configuration);
+        targetHeadX = initTargetListenerByConfiguration(PROP_TARGET_HEAD_X, configuration);
+        targetHeadY = initTargetListenerByConfiguration(PROP_TARGET_HEAD_Y, configuration);
+        targetHeadRotation = initTargetListenerByConfiguration(PROP_TARGET_HEAD_ROTATION, configuration);
+        targetGripper = initTargetListenerByConfiguration(PROP_TARGET_GRIPPER, configuration);
+        targetDisplay = initTargetListenerByConfiguration(PROP_TARGET_DISPLAY, configuration);
 
-        //targetPlatformY
-        targetPlatformY = configuration.getString(PROP_TARGET_PLATFORM_Y, null);
-        validateProperty(targetPlatformY, PROP_TARGET_PLATFORM_Y);
-        currentListenersValues.put(targetPlatformY, 0F);
-
-        //targetPlatformYX
-        targetPlatformYX = configuration.getString(PROP_TARGET_PLATFORM_YX, null);
-        validateProperty(targetPlatformYX, PROP_TARGET_PLATFORM_YX);
-        currentListenersValues.put(targetPlatformYX, 0F);
-
-        //targetHeadX
-        targetHeadX = configuration.getString(PROP_TARGET_HEAD_X, null);
-        validateProperty(targetHeadX, PROP_TARGET_HEAD_X);
-        currentListenersValues.put(targetHeadX, 0F);
-
-        //targetHeadY
-        targetHeadY = configuration.getString(PROP_TARGET_HEAD_Y, null);
-        validateProperty(targetHeadY, PROP_TARGET_HEAD_Y);
-        currentListenersValues.put(targetHeadY, 0F);
-
-        //targetHeadRotation
-        targetHeadRotation = configuration.getString(PROP_TARGET_HEAD_ROTATION, null);
-        validateProperty(targetHeadRotation, PROP_TARGET_HEAD_ROTATION);
-        currentListenersValues.put(targetHeadRotation, 0F);
-
-        //targetGripper
-        targetGripper = configuration.getString(PROP_TARGET_GRIPPER, null);
-        validateProperty(targetGripper, PROP_TARGET_GRIPPER);
-        currentListenersValues.put(targetGripper, 0F);
-
-        targetDisplay = configuration.getString(PROP_TARGET_DISPLAY, null);
-        validateProperty(targetDisplay, PROP_TARGET_DISPLAY);
-        currentListenersValues.put(targetDisplay, 0F);
-
-
-        servoPlatformXStep = configuration.getFloat(PROP_SERVO_PLATFORM_X_STEP, null);
-        validateProperty(servoPlatformXStep, PROP_SERVO_PLATFORM_X_STEP);
-        servoPlatformYXStep = configuration.getFloat(PROP_SERVO_PLATFORM_YX_STEP, null);
-        validateProperty(servoPlatformYXStep, PROP_SERVO_PLATFORM_YX_STEP);
-        servoRotationStep = configuration.getFloat(PROP_SERVO_ROTATION_STEP, null);
-        validateProperty(servoRotationStep, PROP_SERVO_ROTATION_STEP);
-        servoRotationHeadRightLeftStep = configuration.getFloat(PROP_SERVO_ROTATION_HEAD_LEFT_RIGHT_STEP, null);
-        validateProperty(servoRotationHeadRightLeftStep, PROP_SERVO_ROTATION_HEAD_LEFT_RIGHT_STEP);
+        servoPlatformXStep = initFloatConfiguration(PROP_SERVO_PLATFORM_X_STEP, configuration);
+        servoPlatformYXStep = initFloatConfiguration(PROP_SERVO_PLATFORM_YX_STEP, configuration);
+        servoRotationHeadRightLeftStep = initFloatConfiguration(PROP_SERVO_ROTATION_HEAD_LEFT_RIGHT_STEP, configuration);
 
         delay = configuration.getLong(PROP_DELAY, DEFAULT_DELAY_MILLS);
     }
@@ -240,6 +202,19 @@ public class ArmController extends RoboUnit<LF710Message> {
     @Override
     public void onMessage(LF710Message message) {
         processPadMessage(message);
+    }
+
+    private Float initFloatConfiguration(String propertyName, Configuration configuration) throws ConfigurationException{
+        Float property = configuration.getFloat(propertyName, null);
+        validateProperty(property, propertyName);
+        return property;
+    }
+
+    private String initTargetListenerByConfiguration(String propertyTarget, Configuration configuration) throws ConfigurationException{
+        String property = configuration.getString(propertyTarget, null);
+        validateProperty(property, propertyTarget);
+        currentListenersValues.put(property, 0F);
+        return property;
     }
 
     private void processPadMessage(LF710Message message) {

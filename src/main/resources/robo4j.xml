@@ -14,7 +14,6 @@
             <value name="targetHeadY" type="String">servo5</value>
             <value name="targetHeadRotation" type="String">servo4</value>
             <value name="targetGripper" type="String">servo7</value>
-            <value name="servoRotationStep" type="float">0.1</value>
             <value name="servoRotationHeadRightLeftStep" type="float">0.01</value>
             <value name="targetDisplay" type="String">ledMatrixController</value>
             <value name="delay" type="long">20</value>
