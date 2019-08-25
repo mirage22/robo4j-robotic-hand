@@ -21,8 +21,11 @@ import com.robo4j.RoboApplication;
 import com.robo4j.RoboBuilder;
 import com.robo4j.RoboContext;
 import com.robo4j.logging.SimpleLoggingUtil;
+import com.robo4j.net.LookupService;
+import com.robo4j.net.LookupServiceProvider;
 import com.robo4j.util.SystemUtil;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -72,9 +75,18 @@ public class RoboticArmMain {
 
         RoboContext system = builder.build();
         system.start();
+
+        LookupService service = LookupServiceProvider.getDefaultLookupService();
+        try {
+            service.start();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
         SimpleLoggingUtil.info(RoboApplication.class, SystemUtil.printStateReport(system));
         System.out.println("Press key...");
         System.in.read();
+        service.stop();
         system.shutdown();
         System.out.println("Bye!");
 

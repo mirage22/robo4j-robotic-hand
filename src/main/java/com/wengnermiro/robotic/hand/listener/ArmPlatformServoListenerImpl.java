@@ -18,7 +18,9 @@
 package com.wengnermiro.robotic.hand.listener;
 
 import com.robo4j.RoboContext;
+import com.robo4j.RoboReference;
 import com.robo4j.hw.rpi.pad.LF710Input;
+import com.wengnermiro.robotic.hand.unit.RemoteBargraphController;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -80,6 +82,7 @@ public class ArmPlatformServoListenerImpl implements ArmListener {
     @Override
     public float process() {
         if (active.get()) {
+            sendMessageToBarGraph(amount);
             short step = amount > 0 ? MAX_AMOUNT : -MAX_AMOUNT;
             value = normValue(value, step, absPos, servoStep);
             context.getReference(name).sendMessage(value);
@@ -93,5 +96,12 @@ public class ArmPlatformServoListenerImpl implements ArmListener {
             return Math.signum(nexValue);
         }
         return nexValue;
+    }
+
+    private void sendMessageToBarGraph(float  amount){
+        RoboReference<Float> remoteBargraphController = context.getReference(RemoteBargraphController.NAME);
+        if(remoteBargraphController != null){
+            remoteBargraphController.sendMessage(amount);
+        }
     }
 }

@@ -34,6 +34,13 @@
             <value name="target" type="String">armController</value>
         </config>
     </roboUnit>
+    <roboUnit id="remoteBargraphController">
+        <class>com.wengnermiro.robotic.hand.unit.RemoteBargraphController</class>
+        <config name="com.robo4j.root">
+            <value name="targetSystem" type="String">bargraph24System</value>
+            <value name="target" type="String">bargraph</value>
+        </config>
+    </roboUnit>
     <roboUnit id="ledMatrixController">
         <class>com.wengnermiro.robotic.hand.unit.LedMatrixController</class>
         <config name="com.robo4j.root">

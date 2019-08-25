@@ -5,7 +5,7 @@
             <value name="poolSizeWorker" type="int">15</value>
             <value name="poolSizeBlocking" type="int">15</value>
             <config name="com.robo4j.messageServer">
-                <value name="hostname" type="String">localhost</value>
+                <value name="hostname" type="String">192.168.22.19</value>
                 <!-- 0 means an anonymous port will be used for the message server -->
                 <value name="port" type="int">0</value>
             </config>
