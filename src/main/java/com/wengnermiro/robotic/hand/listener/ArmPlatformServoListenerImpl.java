@@ -20,6 +20,7 @@ package com.wengnermiro.robotic.hand.listener;
 import com.robo4j.RoboContext;
 import com.robo4j.RoboReference;
 import com.robo4j.hw.rpi.pad.LF710Input;
+import com.wengnermiro.robotic.hand.jfr.JfrPlatformEvent;
 import com.wengnermiro.robotic.hand.unit.RemoteBargraphController;
 
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -86,8 +87,14 @@ public class ArmPlatformServoListenerImpl implements ArmListener {
             short step = amount > 0 ? MAX_AMOUNT : -MAX_AMOUNT;
             value = normValue(value, step, absPos, servoStep);
             context.getReference(name).sendMessage(value);
+            emitJfrEvent(value);
         }
         return value;
+    }
+
+    private void emitJfrEvent(float value){
+        JfrPlatformEvent event = new JfrPlatformEvent(name, value, Thread.currentThread().getName());
+        event.commit();
     }
 
     private float normValue(float current, Short value, int absValue, float step) {

@@ -17,8 +17,8 @@
 
 package com.wengnermiro.robotic.hand.unit;
 
-import com.robo4j.hw.rpi.i2c.adafruitoled.LEDBackpackUtils;
-import com.robo4j.hw.rpi.i2c.adafruitoled.PackElement;
+import com.robo4j.hw.rpi.i2c.adafruitbackpack.LEDBackpackUtils;
+import com.robo4j.hw.rpi.i2c.adafruitbackpack.PackElement;
 
 /**
  * LedMatrixMessage provides message that can be displayed on

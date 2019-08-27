@@ -22,12 +22,12 @@ import com.robo4j.RoboContext;
 import com.robo4j.RoboReference;
 import com.robo4j.RoboUnit;
 import com.robo4j.configuration.Configuration;
-import com.robo4j.hw.rpi.i2c.adafruitoled.BiColor;
-import com.robo4j.hw.rpi.i2c.adafruitoled.PackElement;
-import com.robo4j.logging.SimpleLoggingUtil;
+import com.robo4j.hw.rpi.i2c.adafruitbackpack.BiColor;
+import com.robo4j.hw.rpi.i2c.adafruitbackpack.PackElement;
 import com.robo4j.net.LookupServiceProvider;
 import com.robo4j.units.rpi.led.LEDBackpackMessage;
 import com.robo4j.units.rpi.led.LEDBackpackMessageType;
+import com.wengnermiro.robotic.hand.jfr.JfrBargraphEvent;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -48,9 +48,10 @@ public class RemoteBargraphController extends RoboUnit<Float> {
     private static final LEDBackpackMessage clearMessage = new LEDBackpackMessage();
     private String targetSystem;
     private String target;
+    private RoboContext remoteContext;
 
-    private int bargraphCounter = 0;
-    private boolean isIncrement = true;
+    private AtomicInteger bargraphCounter = new AtomicInteger(0);
+    private AtomicBoolean isIncrement = new AtomicBoolean(true);
 
     public RemoteBargraphController(RoboContext context, String id) {
         super(Float.class, context, id);
@@ -62,41 +63,43 @@ public class RemoteBargraphController extends RoboUnit<Float> {
         target = configuration.getString(ATTR_TARGET, null);
     }
 
+
     @Override
     public void onMessage(Float message) {
-        SimpleLoggingUtil.info(getClass(), "FLOAT MESSAGE:" + message + ", targetSystem:" + targetSystem + ", target:" + target);
         RoboContext remoteContext = LookupServiceProvider.getDefaultLookupService().getContext(targetSystem);
         if(remoteContext != null){
             RoboReference<LEDBackpackMessage> remoteUnit = remoteContext.getReference(target);
             if(remoteUnit != null){
 
-                if(isIncrement) {
-                    bargraphCounter++;
+                if(isIncrement.get()) {
+                    bargraphCounter.incrementAndGet();
                 }else {
-                    bargraphCounter--;
+                    bargraphCounter.decrementAndGet();
                 }
 
                 remoteUnit.sendMessage(clearMessage);
                 LEDBackpackMessage addMessage = new LEDBackpackMessage(LEDBackpackMessageType.DISPLAY);
-                for(int i=0; i < bargraphCounter; i++){
+                for(int i=0; i < bargraphCounter.get(); i++){
                     PackElement element = new PackElement(i, BiColor.GREEN);
                     addMessage.addElement(element);
                 }
+                emitJfrEvent(message, bargraphCounter.get(), isIncrement.get());
                 remoteUnit.sendMessage(addMessage);
 
-                if(isIncrement && bargraphCounter >= 23){
-                    bargraphCounter = 23;
-                    isIncrement = false;
+                if(isIncrement.get() && bargraphCounter.get() >= 23){
+                    bargraphCounter.set(23);
+                    isIncrement.set(false);
                 }
-                if(!isIncrement && bargraphCounter <= 0){
-                    bargraphCounter=0;
-                    isIncrement = true;
+                if(!isIncrement.get() && bargraphCounter.get() <= 0){
+                    bargraphCounter.set(0);
+                    isIncrement.set(true);
                 }
-            } else {
-                SimpleLoggingUtil.error(getClass(), "remoteUnit: NULL, target:" + target);
             }
-        } else {
-            SimpleLoggingUtil.error(getClass(), "remoteContext: NULL, targetSystem:" + targetSystem);
         }
+    }
+
+    private void emitJfrEvent(float amount, int bargraphCounter, boolean inc){
+        JfrBargraphEvent event = new JfrBargraphEvent(amount,bargraphCounter,  inc, Thread.currentThread().getName());
+        event.commit();
     }
 }

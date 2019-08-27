@@ -80,7 +80,7 @@ public class ArmController extends RoboUnit<LF710Message> {
     public static final String PROP_TARGET_DISPLAY = "targetDisplay";
 
     private final ScheduledExecutorService executor = Executors.newScheduledThreadPool(1, (r) -> {
-        Thread t = new Thread(r, "ArmController Internal Executor");
+        Thread t = new Thread(r, "ArmController Internal Executor-1");
         t.setDaemon(true);
         return t;
     });
