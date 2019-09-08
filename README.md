@@ -10,7 +10,7 @@ The whole system is latter observer by the RaspberryPi camera. The video stream
 is displayed in JavaFX application. 
 
 ####Demo Schema:
-![The system schema](2019_RoboticArm_Full_Schema.png)
+![The system schema](2019_RoboticArm_schema.png)
 
 ####Requirements
 
