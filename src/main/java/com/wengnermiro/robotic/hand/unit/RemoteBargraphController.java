@@ -24,11 +24,14 @@ import com.robo4j.RoboUnit;
 import com.robo4j.configuration.Configuration;
 import com.robo4j.hw.rpi.i2c.adafruitbackpack.BiColor;
 import com.robo4j.hw.rpi.i2c.adafruitbackpack.PackElement;
+import com.robo4j.logging.SimpleLoggingUtil;
 import com.robo4j.net.LookupServiceProvider;
 import com.robo4j.units.rpi.led.LEDBackpackMessage;
 import com.robo4j.units.rpi.led.LEDBackpackMessageType;
 import com.wengnermiro.robotic.hand.jfr.JfrBargraphEvent;
 
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -45,13 +48,14 @@ public class RemoteBargraphController extends RoboUnit<Float> {
 
     public static final String ATTR_TARGET_SYSTEM = "targetSystem";
     public static final String ATTR_TARGET = "target";
-    private static final LEDBackpackMessage clearMessage = new LEDBackpackMessage();
+    private static final LEDBackpackMessage CLEAR_MESSAGE = new LEDBackpackMessage();
+    private final BlockingQueue<LEDBackpackMessage> eventQueue = new LinkedBlockingQueue<>();
+    private final AtomicBoolean active = new AtomicBoolean(true);
+    private final AtomicInteger bargraphCounter = new AtomicInteger(0);
+    private final AtomicBoolean isIncrement = new AtomicBoolean(true);
     private String targetSystem;
     private String target;
     private RoboContext remoteContext;
-
-    private AtomicInteger bargraphCounter = new AtomicInteger(0);
-    private AtomicBoolean isIncrement = new AtomicBoolean(true);
 
     public RemoteBargraphController(RoboContext context, String id) {
         super(Float.class, context, id);
@@ -63,43 +67,68 @@ public class RemoteBargraphController extends RoboUnit<Float> {
         target = configuration.getString(ATTR_TARGET, null);
     }
 
+    @Override
+    public void start() {
+        getContext().getScheduler().execute(() -> {
+            while (active.get()) {
+                try {
+                    LEDBackpackMessage message = eventQueue.take();
+                    System.out.println("EMITTED MESSAGE:" + message);
+                    RoboContext remoteContext = LookupServiceProvider.getDefaultLookupService().getContext(targetSystem);
+                    if (remoteContext != null) {
+                        RoboReference<LEDBackpackMessage> roboReference = remoteContext.getReference(target);
+                        if (roboReference != null) {
+                            roboReference.sendMessage(message);
+                        }
+                    } else {
+                        SimpleLoggingUtil.info(getClass(), String.format("context not found: %s", targetSystem));
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void shutdown() {
+        active.set(false);
+        super.shutdown();
+    }
+
 
     @Override
     public void onMessage(Float message) {
-        RoboContext remoteContext = LookupServiceProvider.getDefaultLookupService().getContext(targetSystem);
-        if(remoteContext != null){
-            RoboReference<LEDBackpackMessage> remoteUnit = remoteContext.getReference(target);
-            if(remoteUnit != null){
+        eventQueue.add(CLEAR_MESSAGE);
+        LEDBackpackMessage addMessage = new LEDBackpackMessage(LEDBackpackMessageType.DISPLAY);
+        for (int i = 0; i < bargraphCounter.get(); i++) {
+            PackElement element = new PackElement(i, BiColor.GREEN);
+            addMessage.addElement(element);
+        }
+        emitJfrEvent(message, bargraphCounter.get(), isIncrement.get());
+        eventQueue.add(addMessage);
+        evalBargraphState();
 
-                if(isIncrement.get()) {
-                    bargraphCounter.incrementAndGet();
-                }else {
-                    bargraphCounter.decrementAndGet();
-                }
+    }
 
-                remoteUnit.sendMessage(clearMessage);
-                LEDBackpackMessage addMessage = new LEDBackpackMessage(LEDBackpackMessageType.DISPLAY);
-                for(int i=0; i < bargraphCounter.get(); i++){
-                    PackElement element = new PackElement(i, BiColor.GREEN);
-                    addMessage.addElement(element);
-                }
-                emitJfrEvent(message, bargraphCounter.get(), isIncrement.get());
-                remoteUnit.sendMessage(addMessage);
-
-                if(isIncrement.get() && bargraphCounter.get() >= 23){
-                    bargraphCounter.set(23);
-                    isIncrement.set(false);
-                }
-                if(!isIncrement.get() && bargraphCounter.get() <= 0){
-                    bargraphCounter.set(0);
-                    isIncrement.set(true);
-                }
+    private void evalBargraphState() {
+        if (isIncrement.get()) {
+            bargraphCounter.incrementAndGet();
+            if (bargraphCounter.get() >= 23) {
+                bargraphCounter.set(23);
+                isIncrement.set(false);
+            }
+        } else {
+            bargraphCounter.decrementAndGet();
+            if (bargraphCounter.get() <= 0) {
+                bargraphCounter.set(0);
+                isIncrement.set(true);
             }
         }
     }
 
-    private void emitJfrEvent(float amount, int bargraphCounter, boolean inc){
-        JfrBargraphEvent event = new JfrBargraphEvent(amount,bargraphCounter,  inc, Thread.currentThread().getName());
+    private void emitJfrEvent(float amount, int bargraphCounter, boolean inc) {
+        JfrBargraphEvent event = new JfrBargraphEvent(amount, bargraphCounter, inc, Thread.currentThread().getName());
         event.commit();
     }
 }

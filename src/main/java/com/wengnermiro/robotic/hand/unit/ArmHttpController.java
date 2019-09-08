@@ -94,6 +94,7 @@ public class ArmHttpController extends RoboUnit<ArmHttpMessage> {
 
     public static final String NAME = "armHttpController";
     public static final String ATTR_TARGET = "target";
+    
 
     private String target;
 

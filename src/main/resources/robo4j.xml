@@ -25,7 +25,7 @@
             <value name="port" type="int">8055</value>
             <value name="packages" type="String">com.wengnermiro.robotic.hand.codec</value>
             <value name="unitPathsConfig" type="String">[{"roboUnit":"armHttpController","method":"GET"},
-                {"roboUnit":"armHttpController","method":"POST"}]</value>
+                {"roboUnit":"armHttpController","method":"POST"},{"roboUnit":"httpServer", "method":"GET"}]</value>
         </config>
     </roboUnit>
     <roboUnit id="armHttpController">
